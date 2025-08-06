@@ -64,7 +64,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
 
-
     @Override
     public LoginUserVO userLogin(String account, String password, HttpServletRequest request) {
         checkLoginAndRegisterParams(account, password, password);
@@ -94,6 +93,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new BizException(ResponseCodeEnum.NOT_LOGIN_ERROR);
         }
         return user;
+    }
+
+    @Override
+    public boolean logout(HttpServletRequest request) {
+        Object userObject = request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE);
+        if (userObject == null) {
+            throw new BizException(ResponseCodeEnum.NOT_LOGIN_ERROR);
+        }
+        request.getSession().removeAttribute(UserConstant.USER_LOGIN_STATE);
+        return true;
     }
 
     private void checkLoginAndRegisterParams(String account, String password, String checkPassword) {
