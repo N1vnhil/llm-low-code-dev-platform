@@ -63,6 +63,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         return loginUserVO;
     }
 
+
+
     @Override
     public LoginUserVO userLogin(String account, String password, HttpServletRequest request) {
         checkLoginAndRegisterParams(account, password, password);
@@ -76,6 +78,22 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
         request.getSession().setAttribute(UserConstant.USER_LOGIN_STATE, user);
         return this.getLoginUserVO(user);
+    }
+
+    @Override
+    public User getLoginUser(HttpServletRequest request) {
+        Object userObject = request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE);
+        User user = (User) userObject;
+        if (user == null || user.getId() == null) {
+            throw new BizException(ResponseCodeEnum.NOT_LOGIN_ERROR);
+        }
+
+        Long userId = user.getId();
+        user = this.getById(userId);
+        if (user == null) {
+            throw new BizException(ResponseCodeEnum.NOT_LOGIN_ERROR);
+        }
+        return user;
     }
 
     private void checkLoginAndRegisterParams(String account, String password, String checkPassword) {

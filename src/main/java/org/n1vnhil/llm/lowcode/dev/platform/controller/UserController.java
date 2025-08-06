@@ -52,6 +52,12 @@ public class UserController {
         return ResponseUtils.success(loginUserVO);
     }
 
+    @GetMapping("/login")
+    public Response<LoginUserVO> getUserInfo(HttpServletRequest request) {
+        User user = userService.getLoginUser(request);
+        return ResponseUtils.success(userService.getLoginUserVO(user));
+    }
+
     /**
      * 保存用户。
      *
