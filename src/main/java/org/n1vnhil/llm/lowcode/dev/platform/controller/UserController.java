@@ -25,7 +25,13 @@ public class UserController {
     @Resource
     private UserService userService;
 
-    public Response<Long> userRegister(UserRegisterRequest userRegisterRequest) {
+    /**
+     * 用户注册
+     * @param userRegisterRequest 注册请求
+     * @return 注册结果
+     */
+    @PostMapping("/register")
+    public Response<Long> userRegister(@RequestBody UserRegisterRequest userRegisterRequest) {
         ThrowUtils.throwIf(userRegisterRequest == null, ResponseCodeEnum.PARAMS_ERROR);
         String userAccount = userRegisterRequest.getUserAccount();
         String password = userRegisterRequest.getPassword();
