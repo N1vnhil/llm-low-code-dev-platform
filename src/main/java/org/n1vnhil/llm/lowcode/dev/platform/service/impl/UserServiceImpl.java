@@ -59,7 +59,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     public LoginUserVO getLoginUserVO(User user) {
         if(user == null) return null;
         LoginUserVO loginUserVO = new LoginUserVO();
-        BeanUtils.copyProperties(loginUserVO, user);
+        BeanUtils.copyProperties(user, loginUserVO);
         return loginUserVO;
     }
 
