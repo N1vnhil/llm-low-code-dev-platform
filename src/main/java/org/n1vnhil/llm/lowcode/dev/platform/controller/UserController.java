@@ -1,9 +1,14 @@
 package org.n1vnhil.llm.lowcode.dev.platform.controller;
 
 import com.mybatisflex.core.paginate.Page;
-import org.n1vnhil.llm.lowcode.dev.platform.genresult.entity.User;
-import org.n1vnhil.llm.lowcode.dev.platform.genresult.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.annotation.Resource;
+import org.n1vnhil.llm.lowcode.dev.platform.common.Response;
+import org.n1vnhil.llm.lowcode.dev.platform.common.ResponseUtils;
+import org.n1vnhil.llm.lowcode.dev.platform.exception.ResponseCodeEnum;
+import org.n1vnhil.llm.lowcode.dev.platform.exception.ThrowUtils;
+import org.n1vnhil.llm.lowcode.dev.platform.model.entity.User;
+import org.n1vnhil.llm.lowcode.dev.platform.service.UserService;
+import org.n1vnhil.llm.lowcode.dev.platform.model.dto.UserRegisterRequest;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,8 +22,17 @@ import java.util.List;
 @RequestMapping("/user")
 public class UserController {
 
-    @Autowired
+    @Resource
     private UserService userService;
+
+    public Response<Long> userRegister(UserRegisterRequest userRegisterRequest) {
+        ThrowUtils.throwIf(userRegisterRequest == null, ResponseCodeEnum.PARAMS_ERROR);
+        String userAccount = userRegisterRequest.getUserAccount();
+        String password = userRegisterRequest.getPassword();
+        String checkPassword = userRegisterRequest.getCheckPassword();
+        long result = userService.userRegister(userAccount, password, checkPassword);
+        return ResponseUtils.success(result);
+    }
 
     /**
      * 保存用户。
