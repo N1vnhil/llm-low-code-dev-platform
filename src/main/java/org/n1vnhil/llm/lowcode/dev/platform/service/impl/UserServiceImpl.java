@@ -1,5 +1,6 @@
 package org.n1vnhil.llm.lowcode.dev.platform.service.impl;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
@@ -7,14 +8,20 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.n1vnhil.llm.lowcode.dev.platform.constant.UserConstant;
 import org.n1vnhil.llm.lowcode.dev.platform.exception.BizException;
 import org.n1vnhil.llm.lowcode.dev.platform.exception.ResponseCodeEnum;
+import org.n1vnhil.llm.lowcode.dev.platform.model.dto.user.UserQueryRequest;
 import org.n1vnhil.llm.lowcode.dev.platform.model.entity.User;
 import org.n1vnhil.llm.lowcode.dev.platform.mapper.UserMapper;
 import org.n1vnhil.llm.lowcode.dev.platform.model.enums.UserRoleEnum;
-import org.n1vnhil.llm.lowcode.dev.platform.model.vo.LoginUserVO;
+import org.n1vnhil.llm.lowcode.dev.platform.model.vo.user.LoginUserVO;
+import org.n1vnhil.llm.lowcode.dev.platform.model.vo.user.UserVO;
 import org.n1vnhil.llm.lowcode.dev.platform.service.UserService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 用户 服务层实现。
@@ -105,6 +112,25 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         return true;
     }
 
+    @Override
+    public UserVO getUserVO(User user) {
+        if (user == null) {
+            return null;
+        }
+
+        UserVO userVO = new UserVO();
+        BeanUtils.copyProperties(user, userVO);
+        return userVO;
+    }
+
+    @Override
+    public List<UserVO> getUserVOList(List<User> userList) {
+        if (CollUtil.isEmpty(userList)) {
+            return new ArrayList<>();
+        }
+        return userList.stream().map(this::getUserVO).collect(Collectors.toList());
+    }
+
     private void checkLoginAndRegisterParams(String account, String password, String checkPassword) {
         if (StrUtil.hasBlank(account, password, checkPassword)) {
             throw new BizException(ResponseCodeEnum.PARAMS_ERROR, "参数为空");
@@ -121,6 +147,26 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if(!password.equals(checkPassword)) {
             throw new BizException(ResponseCodeEnum.PARAMS_ERROR, "两次输入密码不一致");
         }
+    }
+
+    public QueryWrapper getQueryWrapper(UserQueryRequest userQueryRequest) {
+        if (userQueryRequest == null) {
+            throw new BizException(ResponseCodeEnum.PARAMS_ERROR, "请求参数为空");
+        }
+        Long id = userQueryRequest.getId();
+        String userAccount = userQueryRequest.getUserAccount();
+        String userName = userQueryRequest.getUserName();
+        String userProfile = userQueryRequest.getUserProfile();
+        String userRole = userQueryRequest.getUserRole();
+        String sortField = userQueryRequest.getSortField();
+        String sortOrder = userQueryRequest.getSortOrder();
+        return QueryWrapper.create()
+                .eq("id", id)
+                .eq("userRole", userRole)
+                .like("userName", userName)
+                .like("userProfile", userProfile)
+                .like("userAccount", userAccount)
+                .orderBy(sortField, "ascend".equals(sortOrder));
     }
 
 }

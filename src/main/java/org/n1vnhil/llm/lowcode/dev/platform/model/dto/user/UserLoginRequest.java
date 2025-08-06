@@ -1,4 +1,4 @@
-package org.n1vnhil.llm.lowcode.dev.platform.model.dto;
+package org.n1vnhil.llm.lowcode.dev.platform.model.dto.user;
 
 import lombok.Data;
 

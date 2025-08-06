@@ -1,21 +1,17 @@
-package org.n1vnhil.llm.lowcode.dev.platform.model.vo;
+package org.n1vnhil.llm.lowcode.dev.platform.model.dto.user;
 
 import lombok.Data;
-import org.springframework.cglib.core.Local;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.time.LocalDateTime;
 
 @Data
-public class LoginUserVO implements Serializable {
+public class UserUpdateRequest implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
 
     private Long id;
-
-    private String userAccount;
 
     private String userName;
 
@@ -25,7 +21,4 @@ public class LoginUserVO implements Serializable {
 
     private String userRole;
 
-    private LocalDateTime createTime;
-
-    private LocalDateTime updateTime;
 }
