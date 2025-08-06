@@ -2,11 +2,14 @@ package org.n1vnhil.llm.lowcode.dev.platform.controller;
 
 import com.mybatisflex.core.paginate.Page;
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletRequest;
 import org.n1vnhil.llm.lowcode.dev.platform.common.Response;
 import org.n1vnhil.llm.lowcode.dev.platform.common.ResponseUtils;
 import org.n1vnhil.llm.lowcode.dev.platform.exception.ResponseCodeEnum;
 import org.n1vnhil.llm.lowcode.dev.platform.exception.ThrowUtils;
+import org.n1vnhil.llm.lowcode.dev.platform.model.dto.UserLoginRequest;
 import org.n1vnhil.llm.lowcode.dev.platform.model.entity.User;
+import org.n1vnhil.llm.lowcode.dev.platform.model.vo.LoginUserVO;
 import org.n1vnhil.llm.lowcode.dev.platform.service.UserService;
 import org.n1vnhil.llm.lowcode.dev.platform.model.dto.UserRegisterRequest;
 import org.springframework.web.bind.annotation.*;
@@ -38,6 +41,15 @@ public class UserController {
         String checkPassword = userRegisterRequest.getCheckPassword();
         long result = userService.userRegister(userAccount, password, checkPassword);
         return ResponseUtils.success(result);
+    }
+
+    @PostMapping("/login")
+    public Response<LoginUserVO> userLogin(@RequestBody UserLoginRequest userLoginRequest, HttpServletRequest request) {
+        ThrowUtils.throwIf(userLoginRequest == null, ResponseCodeEnum.PARAMS_ERROR);
+        String account = userLoginRequest.getUserAccount();
+        String password = userLoginRequest.getPassword();
+        LoginUserVO loginUserVO = userService.userLogin(account, password, request);
+        return ResponseUtils.success(loginUserVO);
     }
 
     /**
