@@ -13,7 +13,7 @@ import java.nio.charset.StandardCharsets;
 
 public class CodeFileSaver {
 
-    private static final String FILE_SAVE_ROOT_DIR = System.getProperty("usr.dir") + "/tmp/code_output";
+    private static final String FILE_SAVE_ROOT_DIR = System.getProperty("user.dir") + "/tmp/code_output";
 
     public static File saveHtmlCodeResult(HtmlCodeResult htmlCodeResult) {
         String baseDirPath = buildUniqueDir(CodeGenerationType.HTML.getValue());
