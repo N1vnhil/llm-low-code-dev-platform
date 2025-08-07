@@ -3,15 +3,20 @@ package org.n1vnhil.llm.lowcode.dev.platform.controller;
 import com.mybatisflex.core.paginate.Page;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
+import org.n1vnhil.llm.lowcode.dev.platform.annotation.AuthCheck;
+import org.n1vnhil.llm.lowcode.dev.platform.common.DeleteRequest;
 import org.n1vnhil.llm.lowcode.dev.platform.common.Response;
 import org.n1vnhil.llm.lowcode.dev.platform.common.ResponseUtils;
+import org.n1vnhil.llm.lowcode.dev.platform.constant.UserConstant;
+import org.n1vnhil.llm.lowcode.dev.platform.exception.BizException;
 import org.n1vnhil.llm.lowcode.dev.platform.exception.ResponseCodeEnum;
 import org.n1vnhil.llm.lowcode.dev.platform.exception.ThrowUtils;
-import org.n1vnhil.llm.lowcode.dev.platform.model.dto.UserLoginRequest;
+import org.n1vnhil.llm.lowcode.dev.platform.model.dto.user.*;
 import org.n1vnhil.llm.lowcode.dev.platform.model.entity.User;
-import org.n1vnhil.llm.lowcode.dev.platform.model.vo.LoginUserVO;
+import org.n1vnhil.llm.lowcode.dev.platform.model.vo.user.LoginUserVO;
+import org.n1vnhil.llm.lowcode.dev.platform.model.vo.user.UserVO;
 import org.n1vnhil.llm.lowcode.dev.platform.service.UserService;
-import org.n1vnhil.llm.lowcode.dev.platform.model.dto.UserRegisterRequest;
+import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -78,66 +83,102 @@ public class UserController {
     /**
      * 保存用户。
      *
-     * @param user 用户
+     * @param userAddRequest 添加用户请求
      * @return {@code true} 保存成功，{@code false} 保存失败
      */
-    @PostMapping("save")
-    public boolean save(@RequestBody User user) {
-        return userService.save(user);
+    @AuthCheck(role = UserConstant.ADMIN_ROLE)
+    @PostMapping("/add")
+    public Response<Long> add(@RequestBody UserAddRequest userAddRequest) {
+        ThrowUtils.throwIf(userAddRequest == null, ResponseCodeEnum.PARAMS_ERROR);
+        User user = new User();
+        BeanUtils.copyProperties(userAddRequest, user);
+        final String DEFAULT_PASSWORD = "12345678";
+        user.setUserPassword(userService.getEncryptPassword(DEFAULT_PASSWORD));
+        boolean result =  userService.save(user);
+        ThrowUtils.throwIf(!result, ResponseCodeEnum.OPERATION_ERROR);
+        return ResponseUtils.success(user.getId());
     }
 
     /**
      * 根据主键删除用户。
      *
-     * @param id 主键
+     * @param deleteRequest 删除用户请求
      * @return {@code true} 删除成功，{@code false} 删除失败
      */
-    @DeleteMapping("remove/{id}")
-    public boolean remove(@PathVariable Long id) {
-        return userService.removeById(id);
+    @AuthCheck(role = UserConstant.ADMIN_ROLE)
+    @DeleteMapping("/remove/{id}")
+    public Response<Boolean> remove(@RequestBody DeleteRequest deleteRequest) {
+        if (deleteRequest == null || deleteRequest.getId() < 0) {
+            throw new BizException(ResponseCodeEnum.PARAMS_ERROR);
+        }
+        boolean success = userService.removeById(deleteRequest.getId());
+        return ResponseUtils.success(success);
     }
 
     /**
-     * 根据主键更新用户。
+     * 更新用户信息
      *
-     * @param user 用户
-     * @return {@code true} 更新成功，{@code false} 更新失败
+     * @param userUpdateRequest 更新用户请求
+     * @return 更新结果
      */
-    @PutMapping("update")
-    public boolean update(@RequestBody User user) {
-        return userService.updateById(user);
-    }
-
-    /**
-     * 查询所有用户。
-     *
-     * @return 所有数据
-     */
-    @GetMapping("list")
-    public List<User> list() {
-        return userService.list();
+    @AuthCheck(role = UserConstant.ADMIN_ROLE)
+    @PutMapping("/update")
+    public Response<Boolean> update(@RequestBody UserUpdateRequest userUpdateRequest) {
+        User user = new User();
+        BeanUtils.copyProperties(userUpdateRequest, user);
+        boolean result =  userService.updateById(user);
+        return ResponseUtils.success(result);
     }
 
     /**
      * 根据主键获取用户。
      *
-     * @param id 用户主键
+     * @param id 用户id
      * @return 用户详情
      */
-    @GetMapping("getInfo/{id}")
-    public User getInfo(@PathVariable Long id) {
-        return userService.getById(id);
+    @AuthCheck(role = UserConstant.ADMIN_ROLE)
+    @GetMapping("/get/{id}")
+    public Response<User> getUserById(@PathVariable("id") Long id) {
+        ThrowUtils.throwIf(id == null || id < 0, ResponseCodeEnum.PARAMS_ERROR);
+        User user = userService.getById(id);
+        ThrowUtils.throwIf(user == null, ResponseCodeEnum.OPERATION_ERROR);
+        return ResponseUtils.success(user);
+    }
+
+    /**
+     * 根据主键获取用户。
+     *
+     * @param id 用户id
+     * @return 用户详情
+     */
+    @GetMapping("/get/vo/{id}")
+    public Response<UserVO> getUserVOById(@PathVariable("id") Long id) {
+        ThrowUtils.throwIf(id == null || id < 0, ResponseCodeEnum.PARAMS_ERROR);
+        User user = userService.getById(id);
+        ThrowUtils.throwIf(user == null, ResponseCodeEnum.OPERATION_ERROR);
+        UserVO userVO = new UserVO();
+        BeanUtils.copyProperties(user, userVO);
+        return ResponseUtils.success(userVO);
     }
 
     /**
      * 分页查询用户。
      *
-     * @param page 分页对象
+     * @param userQueryRequest 分页查询请求
      * @return 分页对象
      */
-    @GetMapping("page")
-    public Page<User> page(Page<User> page) {
-        return userService.page(page);
+    @AuthCheck(role = UserConstant.ADMIN_ROLE)
+    @PostMapping("/list/vo")
+    public Response<Page<UserVO>> page(@RequestBody UserQueryRequest userQueryRequest) {
+        ThrowUtils.throwIf(userQueryRequest == null, ResponseCodeEnum.PARAMS_ERROR);
+        long pageNum = userQueryRequest.getPageNum();
+        long pageSize = userQueryRequest.getPageSize();
+        Page<User> userPage = userService.page(Page.of(pageNum, pageSize),
+                userService.getQueryWrapper(userQueryRequest));
+        Page<UserVO> userVOPage = new Page<>(pageNum, pageSize, userPage.getTotalRow());
+        List<UserVO> userVOList = userService.getUserVOList(userPage.getRecords());
+        userVOPage.setRecords(userVOList);
+        return ResponseUtils.success(userVOPage);
     }
 
 }
