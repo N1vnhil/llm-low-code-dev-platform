@@ -1,12 +1,14 @@
 package org.n1vnhil.llm.lowcode.dev.platform.ai;
 
 import dev.langchain4j.service.SystemMessage;
+import org.n1vnhil.llm.lowcode.dev.platform.ai.model.HtmlCodeResult;
+import org.n1vnhil.llm.lowcode.dev.platform.ai.model.MultiFileCodeResult;
 
 public interface AiCodeGeneratorService {
 
     @SystemMessage(fromResource = "prompt/codegen-html-system-prompt.txt")
-    String generateHtmlCode(String userMessage);
+    HtmlCodeResult generateHtmlCode(String userMessage);
 
     @SystemMessage(fromResource = "prompt/codegen-multi-file-system-prompt.txt")
-    String generateMultiFileCode(String userMessage);
+    MultiFileCodeResult generateMultiFileCode(String userMessage);
 }

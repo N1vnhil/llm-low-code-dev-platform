@@ -34,3 +34,6 @@ build/
 
 ### Local Configs ###
 /src/main/resources/application-local.yml
+
+### Generated Code ###
+/**/tmp/**
