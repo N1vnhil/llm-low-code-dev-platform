@@ -138,7 +138,7 @@ public class UserController {
      */
     @AuthCheck(role = UserConstant.ADMIN_ROLE)
     @GetMapping("/get/{id}")
-    public Response<User> getUserById(@PathVariable Long id) {
+    public Response<User> getUserById(@PathVariable("id") Long id) {
         ThrowUtils.throwIf(id == null || id < 0, ResponseCodeEnum.PARAMS_ERROR);
         User user = userService.getById(id);
         ThrowUtils.throwIf(user == null, ResponseCodeEnum.OPERATION_ERROR);
@@ -152,7 +152,7 @@ public class UserController {
      * @return 用户详情
      */
     @GetMapping("/get/vo/{id}")
-    public Response<UserVO> getUserVO(@PathVariable Long id) {
+    public Response<UserVO> getUserVOById(@PathVariable("id") Long id) {
         ThrowUtils.throwIf(id == null || id < 0, ResponseCodeEnum.PARAMS_ERROR);
         User user = userService.getById(id);
         ThrowUtils.throwIf(user == null, ResponseCodeEnum.OPERATION_ERROR);
@@ -168,7 +168,7 @@ public class UserController {
      * @return 分页对象
      */
     @AuthCheck(role = UserConstant.ADMIN_ROLE)
-    @GetMapping("/list/vo")
+    @PostMapping("/list/vo")
     public Response<Page<UserVO>> page(@RequestBody UserQueryRequest userQueryRequest) {
         ThrowUtils.throwIf(userQueryRequest == null, ResponseCodeEnum.PARAMS_ERROR);
         long pageNum = userQueryRequest.getPageNum();
