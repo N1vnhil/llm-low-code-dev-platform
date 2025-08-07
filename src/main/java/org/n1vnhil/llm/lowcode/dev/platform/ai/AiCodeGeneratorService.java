@@ -4,9 +4,9 @@ import dev.langchain4j.service.SystemMessage;
 
 public interface AiCodeGeneratorService {
 
-    @SystemMessage(fromResource = "prompt/codegen-html-system-prompt")
+    @SystemMessage(fromResource = "prompt/codegen-html-system-prompt.txt")
     String generateHtmlCode(String userMessage);
 
-    @SystemMessage(fromResource = "prompt/codegen-multi-file-system-prompt")
+    @SystemMessage(fromResource = "prompt/codegen-multi-file-system-prompt.txt")
     String generateMultiFileCode(String userMessage);
 }
