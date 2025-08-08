@@ -4,8 +4,8 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.n1vnhil.llm.lowcode.dev.platform.ai.model.HtmlCodeResult;
 import org.n1vnhil.llm.lowcode.dev.platform.ai.model.MultiFileCodeResult;
-import org.n1vnhil.llm.lowcode.dev.platform.core.CodeFileSaver;
-import org.n1vnhil.llm.lowcode.dev.platform.core.CodeParser;
+import org.n1vnhil.llm.lowcode.dev.platform.core.parser.CodeParserExecutor;
+import org.n1vnhil.llm.lowcode.dev.platform.core.saver.CodeFileSaverExecutor;
 import org.n1vnhil.llm.lowcode.dev.platform.exception.BizException;
 import org.n1vnhil.llm.lowcode.dev.platform.exception.ResponseCodeEnum;
 import org.n1vnhil.llm.lowcode.dev.platform.model.enums.CodeGenerationType;
@@ -21,14 +21,26 @@ public class AiCodeGeneratorFacade {
     @Resource
     private AiCodeGeneratorService aiCodeGeneratorService;
 
+    /**
+     * 代码生成同一入口
+     * @param userMessage 用户prompt
+     * @param type 生成代码类型
+     * @return 生成结果
+     */
     public File generateAndSaveCode(String userMessage, CodeGenerationType type) {
         if (type == null) {
             throw new BizException(ResponseCodeEnum.SYSTEM_ERROR, "生成类型为空");
         }
         return switch (type) {
-            case HTML -> generateHtmlCodeAndSave(userMessage);
+            case HTML -> {
+                HtmlCodeResult result = aiCodeGeneratorService.generateHtmlCode(userMessage);
+                yield CodeFileSaverExecutor.executeSaver(result, CodeGenerationType.HTML);
+            }
 
-            case MULTI_FILE -> generateMultiFileCodeAndSave(userMessage);
+            case MULTI_FILE -> {
+                MultiFileCodeResult result = aiCodeGeneratorService.generateMultiFileCode(userMessage);
+                yield CodeFileSaverExecutor.executeSaver(result, CodeGenerationType.MULTI_FILE);
+            }
 
             default -> {
                 String message = "不支持的生成类型：" + type;
@@ -41,59 +53,34 @@ public class AiCodeGeneratorFacade {
         if (type == null) {
             throw new BizException(ResponseCodeEnum.SYSTEM_ERROR, "生成类型为空");
         }
-        return switch (type) {
-            case HTML -> generateHtmlCodeAndSaveStream(userMessage);
 
-            case MULTI_FILE -> generateMultiFileCodeAndSaveStream(userMessage);
+        Flux<String> result = switch (type) {
+            case HTML -> aiCodeGeneratorService.generateHtmlCodeStream(userMessage);
+
+            case MULTI_FILE -> aiCodeGeneratorService.generateMultiFileCodeStream(userMessage);
 
             default -> {
                 String message = "不支持的生成类型：" + type;
                 throw new BizException(ResponseCodeEnum.PARAMS_ERROR, message);
             }
         };
+
+        return processCodeStream(result, type);
     }
 
-    private File generateHtmlCodeAndSave(String userMessage) {
-        HtmlCodeResult result = aiCodeGeneratorService.generateHtmlCode(userMessage);
-        return CodeFileSaver.saveHtmlCodeResult(result);
-    }
-
-    private File generateMultiFileCodeAndSave(String userMessage) {
-        MultiFileCodeResult result = aiCodeGeneratorService.generateMultiFileCode(userMessage);
-        return CodeFileSaver.saveMultiFileCodeResult(result);
-    }
-
-    private Flux<String> generateHtmlCodeAndSaveStream(String userMessage) {
-        Flux<String> stringFlux = aiCodeGeneratorService.generateHtmlCodeStreaming(userMessage);
+    private Flux<String> processCodeStream(Flux<String> codeStream, CodeGenerationType type) {
         StringBuilder codeBuilder = new StringBuilder();
-        return stringFlux
-                .doOnNext(codeBuilder::append)
-                .doOnComplete(() -> {
-                   try {
-                       String htmlCode = codeBuilder.toString();
-                       HtmlCodeResult result = CodeParser.parseHtmlCode(htmlCode);
-                       File saveDir = CodeFileSaver.saveHtmlCodeResult(result);
-                       log.info("保存成功，路径：{}", saveDir.getAbsolutePath());
-                   } catch (Exception e) {
-                       log.error("保存失败：{}", e.getMessage());
-                   }
-                });
-    }
-
-    private Flux<String> generateMultiFileCodeAndSaveStream(String userMessage) {
-        Flux<String> stringFlux = aiCodeGeneratorService.generateMultiFileCodeStreaming(userMessage);
-        StringBuilder codeBuilder = new StringBuilder();
-        return stringFlux
-                .doOnNext(codeBuilder::append)
+        return codeStream.doOnNext(codeBuilder::append)
                 .doOnComplete(() -> {
                     try {
-                        String htmlCode = codeBuilder.toString();
-                        MultiFileCodeResult result = CodeParser.parseMultiFileCode(htmlCode);
-                        File saveDir = CodeFileSaver.saveMultiFileCodeResult(result);
-                        log.info("保存成功，路径：{}", saveDir.getAbsolutePath());
+                        String code = codeBuilder.toString();
+                        Object parsedCode = CodeParserExecutor.execute(code, type);
+                        File saveDir = CodeFileSaverExecutor.executeSaver(parsedCode, type);
+                        log.info("保存成功，路径为：{}", saveDir);
                     } catch (Exception e) {
                         log.error("保存失败：{}", e.getMessage());
                     }
                 });
     }
+
 }

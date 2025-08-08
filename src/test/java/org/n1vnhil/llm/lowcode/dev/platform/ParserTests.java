@@ -2,7 +2,8 @@ package org.n1vnhil.llm.lowcode.dev.platform;
 
 import org.junit.jupiter.api.Test;
 import org.n1vnhil.llm.lowcode.dev.platform.ai.model.HtmlCodeResult;
-import org.n1vnhil.llm.lowcode.dev.platform.core.CodeParser;
+import org.n1vnhil.llm.lowcode.dev.platform.core.parser.CodeParserExecutor;
+import org.n1vnhil.llm.lowcode.dev.platform.model.enums.CodeGenerationType;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
@@ -328,7 +329,7 @@ public class ParserTests {
                 </html>
                 ```        
         """;
-        HtmlCodeResult result = CodeParser.parseHtmlCode(html);
+        HtmlCodeResult result = (HtmlCodeResult) CodeParserExecutor.execute(html, CodeGenerationType.HTML);
         System.out.println(result);
     }
 

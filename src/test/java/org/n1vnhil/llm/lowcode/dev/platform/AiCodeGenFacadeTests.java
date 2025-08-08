@@ -14,7 +14,7 @@ public class AiCodeGenFacadeTests {
 
     @Test
     void testHtml() {
-        aiCodeGeneratorFacade.generateAndSaveCode("日历小工具", CodeGenerationType.HTML);
+        aiCodeGeneratorFacade.generateAndSaveCode("日程表小工具", CodeGenerationType.HTML);
     }
 
 }

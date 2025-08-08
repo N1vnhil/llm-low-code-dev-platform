@@ -14,8 +14,8 @@ public interface AiCodeGeneratorService {
     MultiFileCodeResult generateMultiFileCode(String userMessage);
 
     @SystemMessage(fromResource = "prompt/codegen-html-system-prompt.txt")
-    Flux<String> generateHtmlCodeStreaming(String userMessage);
+    Flux<String> generateHtmlCodeStream(String userMessage);
 
     @SystemMessage(fromResource = "prompt/codegen-multi-file-system-prompt.txt")
-    Flux<String> generateMultiFileCodeStreaming(String userMessage);
+    Flux<String> generateMultiFileCodeStream(String userMessage);
 }
