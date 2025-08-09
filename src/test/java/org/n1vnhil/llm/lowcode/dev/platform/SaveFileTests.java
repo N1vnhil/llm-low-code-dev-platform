@@ -15,7 +15,7 @@ public class SaveFileTests {
         result.setHtmlCode("html");
         result.setCssCode("css");
         result.setJsCode("js");
-        CodeFileSaverExecutor.executeSaver(result, CodeGenerationType.MULTI_FILE);
+        CodeFileSaverExecutor.executeSaver(result, CodeGenerationType.MULTI_FILE, 100L);
     }
 
 }

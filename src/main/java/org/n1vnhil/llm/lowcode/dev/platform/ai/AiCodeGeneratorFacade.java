@@ -27,19 +27,19 @@ public class AiCodeGeneratorFacade {
      * @param type 生成代码类型
      * @return 生成结果
      */
-    public File generateAndSaveCode(String userMessage, CodeGenerationType type) {
+    public File generateAndSaveCode(String userMessage, CodeGenerationType type, Long appId) {
         if (type == null) {
             throw new BizException(ResponseCodeEnum.SYSTEM_ERROR, "生成类型为空");
         }
         return switch (type) {
             case HTML -> {
                 HtmlCodeResult result = aiCodeGeneratorService.generateHtmlCode(userMessage);
-                yield CodeFileSaverExecutor.executeSaver(result, CodeGenerationType.HTML);
+                yield CodeFileSaverExecutor.executeSaver(result, CodeGenerationType.HTML, appId);
             }
 
             case MULTI_FILE -> {
                 MultiFileCodeResult result = aiCodeGeneratorService.generateMultiFileCode(userMessage);
-                yield CodeFileSaverExecutor.executeSaver(result, CodeGenerationType.MULTI_FILE);
+                yield CodeFileSaverExecutor.executeSaver(result, CodeGenerationType.MULTI_FILE, appId);
             }
 
             default -> {
@@ -49,7 +49,7 @@ public class AiCodeGeneratorFacade {
         };
     }
 
-    public Flux<String> generateAndSaveCodeStream(String userMessage, CodeGenerationType type) {
+    public Flux<String> generateAndSaveCodeStream(String userMessage, CodeGenerationType type, Long appId) {
         if (type == null) {
             throw new BizException(ResponseCodeEnum.SYSTEM_ERROR, "生成类型为空");
         }
@@ -65,17 +65,17 @@ public class AiCodeGeneratorFacade {
             }
         };
 
-        return processCodeStream(result, type);
+        return processCodeStream(result, type, appId);
     }
 
-    private Flux<String> processCodeStream(Flux<String> codeStream, CodeGenerationType type) {
+    private Flux<String> processCodeStream(Flux<String> codeStream, CodeGenerationType type, Long appId) {
         StringBuilder codeBuilder = new StringBuilder();
         return codeStream.doOnNext(codeBuilder::append)
                 .doOnComplete(() -> {
                     try {
                         String code = codeBuilder.toString();
                         Object parsedCode = CodeParserExecutor.execute(code, type);
-                        File saveDir = CodeFileSaverExecutor.executeSaver(parsedCode, type);
+                        File saveDir = CodeFileSaverExecutor.executeSaver(parsedCode, type, appId);
                         log.info("保存成功，路径为：{}", saveDir);
                     } catch (Exception e) {
                         log.error("保存失败：{}", e.getMessage());

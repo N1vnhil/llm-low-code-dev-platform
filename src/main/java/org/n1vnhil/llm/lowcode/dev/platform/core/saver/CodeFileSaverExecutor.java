@@ -14,10 +14,10 @@ public class CodeFileSaverExecutor {
 
     private static final MultiFileCodeFileSaverTemplate multiFileSaver = new MultiFileCodeFileSaverTemplate();
 
-    public static File executeSaver(Object result, CodeGenerationType type) {
+    public static File executeSaver(Object result, CodeGenerationType type, Long appId) {
         return switch (type) {
-            case HTML -> htmlCodeFileSaver.saveCode((HtmlCodeResult) result);
-            case MULTI_FILE -> multiFileSaver.saveCode((MultiFileCodeResult) result);
+            case HTML -> htmlCodeFileSaver.saveCode((HtmlCodeResult) result, appId);
+            case MULTI_FILE -> multiFileSaver.saveCode((MultiFileCodeResult) result, appId);
             default -> throw new BizException(ResponseCodeEnum.PARAMS_ERROR, "不支持的代码生成类型：" + type.getValue());
         };
     }
