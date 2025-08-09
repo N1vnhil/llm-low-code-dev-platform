@@ -2,11 +2,13 @@ package org.n1vnhil.llm.lowcode.dev.platform.service.impl;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONUtil;
 import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
+import org.n1vnhil.llm.lowcode.dev.platform.ai.AiCodeGeneratorFacade;
 import org.n1vnhil.llm.lowcode.dev.platform.constant.UserConstant;
 import org.n1vnhil.llm.lowcode.dev.platform.exception.BizException;
 import org.n1vnhil.llm.lowcode.dev.platform.exception.ResponseCodeEnum;
@@ -17,13 +19,19 @@ import org.n1vnhil.llm.lowcode.dev.platform.model.dto.app.AppUpdateRequest;
 import org.n1vnhil.llm.lowcode.dev.platform.model.entity.App;
 import org.n1vnhil.llm.lowcode.dev.platform.model.entity.User;
 import org.n1vnhil.llm.lowcode.dev.platform.mapper.AppMapper;
+import org.n1vnhil.llm.lowcode.dev.platform.model.enums.CodeGenerationType;
 import org.n1vnhil.llm.lowcode.dev.platform.model.enums.UserRoleEnum;
 import org.n1vnhil.llm.lowcode.dev.platform.model.vo.app.AppVO;
 import org.n1vnhil.llm.lowcode.dev.platform.model.vo.user.UserVO;
 import org.n1vnhil.llm.lowcode.dev.platform.service.AppService;
 import org.n1vnhil.llm.lowcode.dev.platform.service.UserService;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -41,7 +49,12 @@ import java.util.stream.Collectors;
 public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppService {
 
     @Resource
+    private AiCodeGeneratorFacade aiCodeGeneratorFacade;
+
+    @Resource
     private UserService userService;
+    @Autowired
+    private RestClient.Builder builder;
 
     @Override
     public AppVO getAppVO(App app) {
@@ -92,6 +105,28 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
                 .eq("priority", request.getPriority())
                 .eq("userId", request.getUserId())
                 .orderBy(sortField, "ascend".equals(sortField));
+    }
+
+    @Override
+    public Flux<ServerSentEvent<String>> chatToGenCode(Long appId, String message, User loginUser) {
+        App app = this.getById(appId);
+        ThrowUtils.throwIf(app == null, ResponseCodeEnum.PARAMS_ERROR, "应用不存在");
+
+        if (!app.getUserId().equals(loginUser.getId())) {
+            throw new BizException(ResponseCodeEnum.NO_AUTH_ERROR, "无权限访问该应用");
+        }
+
+        String codeGenType = app.getCodeGenType();
+        CodeGenerationType type = CodeGenerationType.getEnumByValue(codeGenType);
+        return aiCodeGeneratorFacade.generateAndSaveCodeStream(message, type, appId)
+                .map(chunk -> {
+                    Map<String, String> wrapper = Map.of("d", chunk);
+                    String jsonData = JSONUtil.toJsonStr(wrapper);
+                    return ServerSentEvent.<String>builder().data(jsonData).build();
+                })
+                .concatWith(Mono.just(
+                        ServerSentEvent.<String>builder().event("done").data("").build()
+                ));
     }
 
 }

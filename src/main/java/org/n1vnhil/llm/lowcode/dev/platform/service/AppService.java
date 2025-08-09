@@ -8,7 +8,10 @@ import org.n1vnhil.llm.lowcode.dev.platform.model.dto.app.AppAddRequest;
 import org.n1vnhil.llm.lowcode.dev.platform.model.dto.app.AppQueryRequest;
 import org.n1vnhil.llm.lowcode.dev.platform.model.dto.app.AppUpdateRequest;
 import org.n1vnhil.llm.lowcode.dev.platform.model.entity.App;
+import org.n1vnhil.llm.lowcode.dev.platform.model.entity.User;
 import org.n1vnhil.llm.lowcode.dev.platform.model.vo.app.AppVO;
+import org.springframework.http.codec.ServerSentEvent;
+import reactor.core.publisher.Flux;
 
 import java.util.List;
 
@@ -39,5 +42,7 @@ public interface AppService extends IService<App> {
      * @return 查询条件
      */
     QueryWrapper getQueryWrapper(AppQueryRequest appQueryRequest);
+
+    Flux<ServerSentEvent<String>> chatToGenCode(Long appId, String message, User loginUser);
 
 }

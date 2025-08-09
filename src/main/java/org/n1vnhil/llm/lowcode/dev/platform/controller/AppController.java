@@ -25,11 +25,15 @@ import org.n1vnhil.llm.lowcode.dev.platform.model.enums.UserRoleEnum;
 import org.n1vnhil.llm.lowcode.dev.platform.model.vo.app.AppVO;
 import org.n1vnhil.llm.lowcode.dev.platform.service.UserService;
 import org.springframework.beans.BeanUtils;
+import org.springframework.http.MediaType;
+import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.n1vnhil.llm.lowcode.dev.platform.model.entity.App;
 import org.n1vnhil.llm.lowcode.dev.platform.service.AppService;
+import reactor.core.publisher.Flux;
 
+import java.awt.*;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -266,6 +270,14 @@ public class AppController {
         ThrowUtils.throwIf(app == null, ResponseCodeEnum.NOT_FOUND_ERROR, "应用不存在");
 
         return ResponseUtils.success(appService.getAppVO(app));
+    }
+
+    @GetMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<ServerSentEvent<String>> chatToCode(@RequestParam("appId") Long appId, @RequestParam("message") String message, HttpServletRequest request) {
+        ThrowUtils.throwIf(appId == null || appId <= 0, ResponseCodeEnum.PARAMS_ERROR, "应用ID无效");
+        ThrowUtils.throwIf(StrUtil.isBlank(message), ResponseCodeEnum.PARAMS_ERROR, "用户消息不能为空");
+        User loginUser = userService.getLoginUser(request);
+        return appService.chatToGenCode(appId, message, loginUser);
     }
 
 }
