@@ -15,10 +15,7 @@ import org.n1vnhil.llm.lowcode.dev.platform.constant.UserConstant;
 import org.n1vnhil.llm.lowcode.dev.platform.exception.BizException;
 import org.n1vnhil.llm.lowcode.dev.platform.exception.ResponseCodeEnum;
 import org.n1vnhil.llm.lowcode.dev.platform.exception.ThrowUtils;
-import org.n1vnhil.llm.lowcode.dev.platform.model.dto.app.AppAddRequest;
-import org.n1vnhil.llm.lowcode.dev.platform.model.dto.app.AppAdminUpdateRequest;
-import org.n1vnhil.llm.lowcode.dev.platform.model.dto.app.AppQueryRequest;
-import org.n1vnhil.llm.lowcode.dev.platform.model.dto.app.AppUpdateRequest;
+import org.n1vnhil.llm.lowcode.dev.platform.model.dto.app.*;
 import org.n1vnhil.llm.lowcode.dev.platform.model.entity.User;
 import org.n1vnhil.llm.lowcode.dev.platform.model.enums.CodeGenerationType;
 import org.n1vnhil.llm.lowcode.dev.platform.model.enums.UserRoleEnum;
@@ -278,6 +275,16 @@ public class AppController {
         ThrowUtils.throwIf(StrUtil.isBlank(message), ResponseCodeEnum.PARAMS_ERROR, "用户消息不能为空");
         User loginUser = userService.getLoginUser(request);
         return appService.chatToGenCode(appId, message, loginUser);
+    }
+
+    @PostMapping("/deploy")
+    public Response<String> deployApp(@RequestBody AppDeployRequest appDeployRequest, HttpServletRequest request) {
+        ThrowUtils.throwIf(appDeployRequest == null, ResponseCodeEnum.PARAMS_ERROR);
+        Long appId = appDeployRequest.getAppId();
+        ThrowUtils.throwIf(appId == null || appId <= 0, ResponseCodeEnum.PARAMS_ERROR,  "应用ID不能为空");
+        User loginUser = userService.getLoginUser(request);
+        String deployUrl = appService.deployApp(appId, loginUser);
+        return ResponseUtils.success(deployUrl);
     }
 
 }
