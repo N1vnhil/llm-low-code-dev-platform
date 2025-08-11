@@ -1,17 +1,22 @@
 package org.n1vnhil.llm.lowcode.dev.platform.controller;
 
 import com.mybatisflex.core.paginate.Page;
+import com.mybatisflex.core.query.QueryWrapper;
 import jakarta.annotation.Resource;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
+import jakarta.servlet.http.HttpServletRequest;
+import org.n1vnhil.llm.lowcode.dev.platform.annotation.AuthCheck;
+import org.n1vnhil.llm.lowcode.dev.platform.common.Response;
+import org.n1vnhil.llm.lowcode.dev.platform.common.ResponseUtils;
+import org.n1vnhil.llm.lowcode.dev.platform.exception.ResponseCodeEnum;
+import org.n1vnhil.llm.lowcode.dev.platform.exception.ThrowUtils;
+import org.n1vnhil.llm.lowcode.dev.platform.model.dto.chatHistory.ChatHistoryQueryRequest;
+import org.n1vnhil.llm.lowcode.dev.platform.model.entity.User;
+import org.n1vnhil.llm.lowcode.dev.platform.service.UserService;
+import org.springframework.web.bind.annotation.*;
 import org.n1vnhil.llm.lowcode.dev.platform.model.entity.ChatHistory;
 import org.n1vnhil.llm.lowcode.dev.platform.service.ChatHistoryService;
-import org.springframework.web.bind.annotation.RestController;
+
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -25,6 +30,8 @@ public class ChatHistoryController {
 
     @Resource
     private ChatHistoryService chatHistoryService;
+    @Resource
+    private UserService userService;
 
     /**
      * 保存对话历史。
@@ -82,13 +89,26 @@ public class ChatHistoryController {
 
     /**
      * 分页查询对话历史。
-     *
-     * @param page 分页对象
      * @return 分页对象
      */
-    @GetMapping("page")
-    public Page<ChatHistory> page(Page<ChatHistory> page) {
-        return chatHistoryService.page(page);
+    @PostMapping("/app/{appId}")
+    public Response<Page<ChatHistory>> listAppChatHistory(@PathVariable("appId") Long appId,
+                                                          @RequestParam(value = "pageSize", defaultValue = "10") int pageSize,
+                                                          @RequestParam(value = "lastCreateTime", required = false) LocalDateTime lastCreateTime,
+                                                          HttpServletRequest request) {
+        User loginUser = userService.getLoginUser(request);
+        Page<ChatHistory> result = chatHistoryService.pageChatHistory(appId, pageSize, lastCreateTime, loginUser);
+        return ResponseUtils.success(result);
     }
 
+    @AuthCheck(role = "admin")
+    @PostMapping
+    public Response<Page<ChatHistory>> adminListAllChatHistoryByPage(@RequestBody ChatHistoryQueryRequest chatHistoryQueryRequest) {
+        ThrowUtils.throwIf(chatHistoryQueryRequest == null, ResponseCodeEnum.PARAMS_ERROR);
+        long pageNum = chatHistoryQueryRequest.getPageNum();
+        long pageSize = chatHistoryQueryRequest.getPageSize();
+        QueryWrapper queryWrapper = chatHistoryService.getQueryWrapper(chatHistoryQueryRequest);
+        Page<ChatHistory> result = chatHistoryService.page(Page.of(pageNum, pageSize), queryWrapper);
+        return ResponseUtils.success(result);
+    }
 }

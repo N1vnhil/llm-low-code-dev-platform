@@ -4,17 +4,25 @@ import cn.hutool.core.util.StrUtil;
 import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
+import jakarta.annotation.Resource;
+import org.n1vnhil.llm.lowcode.dev.platform.constant.UserConstant;
 import org.n1vnhil.llm.lowcode.dev.platform.exception.ResponseCodeEnum;
 import org.n1vnhil.llm.lowcode.dev.platform.exception.ThrowUtils;
 import org.n1vnhil.llm.lowcode.dev.platform.model.dto.chatHistory.ChatHistoryAddRequest;
 import org.n1vnhil.llm.lowcode.dev.platform.model.dto.chatHistory.ChatHistoryQueryRequest;
+import org.n1vnhil.llm.lowcode.dev.platform.model.entity.App;
 import org.n1vnhil.llm.lowcode.dev.platform.model.entity.ChatHistory;
 import org.n1vnhil.llm.lowcode.dev.platform.mapper.ChatHistoryMapper;
+import org.n1vnhil.llm.lowcode.dev.platform.model.entity.User;
 import org.n1vnhil.llm.lowcode.dev.platform.model.enums.ChatHistoryMessageType;
 import org.n1vnhil.llm.lowcode.dev.platform.model.vo.chatHistory.ChatHistoryVO;
+import org.n1vnhil.llm.lowcode.dev.platform.service.AppService;
 import org.n1vnhil.llm.lowcode.dev.platform.service.ChatHistoryService;
+import org.n1vnhil.llm.lowcode.dev.platform.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -24,6 +32,11 @@ import java.util.List;
  */
 @Service
 public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatHistory>  implements ChatHistoryService{
+
+    @Resource
+    private AppService appService;
+    @Autowired
+    private UserService userService;
 
     @Override
     public Long addChatHistory(ChatHistoryAddRequest chatHistoryAddRequest) {
@@ -42,12 +55,54 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
 
     @Override
     public QueryWrapper getQueryWrapper(ChatHistoryQueryRequest chatHistoryQueryRequest) {
-        return null;
+        QueryWrapper queryWrapper = new QueryWrapper();
+        if (chatHistoryQueryRequest == null) {
+            return queryWrapper;
+        }
+
+        Long id = chatHistoryQueryRequest.getId();
+        Long appId = chatHistoryQueryRequest.getAppId();
+        String messageType = chatHistoryQueryRequest.getMessageType();
+        Long userId = chatHistoryQueryRequest.getUserId();
+        LocalDateTime lastCreateTime = chatHistoryQueryRequest.getLastCreateTime();
+        String message = chatHistoryQueryRequest.getMessage();
+        String sortField = chatHistoryQueryRequest.getSortField();
+        String sortOrder = chatHistoryQueryRequest.getSortOrder();
+
+        queryWrapper.eq("id", id)
+                .eq("appId", appId)
+                .like("message", message)
+                .eq("userId", userId)
+                .eq("messageType", messageType);
+        if (lastCreateTime != null) {
+            queryWrapper.lt("createTime", lastCreateTime);
+        }
+
+        if (StrUtil.isNotBlank(sortField)) {
+            queryWrapper.orderBy(sortField, "ascend".equals(sortOrder));
+        } else {
+            queryWrapper.orderBy("createTime", false);
+        }
+
+        return queryWrapper;
     }
 
     @Override
-    public Page<ChatHistoryVO> pageChatHistoryVO(ChatHistoryQueryRequest chatHistoryQueryRequest) {
-        return null;
+    public Page<ChatHistory> pageChatHistory(Long appId, int pageSize, LocalDateTime lastCreateTime, User loginUser) {
+        ThrowUtils.throwIf(appId == null || appId <= 0, ResponseCodeEnum.PARAMS_ERROR, "应用ID不能为空");
+        ThrowUtils.throwIf(pageSize <= 0 || pageSize > 50, ResponseCodeEnum.PARAMS_ERROR, "页面大小必须在1-50之间");
+        ThrowUtils.throwIf(loginUser == null, ResponseCodeEnum.NOT_LOGIN_ERROR);
+
+        App app = appService.getById(appId);
+        ThrowUtils.throwIf(app == null, ResponseCodeEnum.PARAMS_ERROR, "应用不存在");
+        boolean isAdmin = UserConstant.ADMIN_ROLE.equals(loginUser.getUserRole());
+        boolean isCreator = app.getUserId().equals(loginUser.getId());
+        ThrowUtils.throwIf(!isAdmin && !isCreator, ResponseCodeEnum.NO_AUTH_ERROR, "无权查看该应用对话记录");
+        ChatHistoryQueryRequest request = new ChatHistoryQueryRequest();
+        request.setAppId(appId);
+        request.setUserId(loginUser.getId());
+        QueryWrapper queryWrapper = this.getQueryWrapper(request);
+        return this.page(Page.of(1, pageSize), queryWrapper);
     }
 
     @Override
@@ -79,4 +134,5 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
                 .build();
         return this.save(chatHistory);
     }
+
 }

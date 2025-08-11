@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 /**
  * 查询对话历史请求
@@ -15,15 +16,19 @@ import java.io.Serializable;
 @EqualsAndHashCode(callSuper = true)
 public class ChatHistoryQueryRequest extends PageRequest implements Serializable {
 
+    private Long id;
+
     /**
      * 应用id
      */
     private Long appId;
 
     /**
-     * 消息类型: user/ai/error
+     * 消息类型: user/ai
      */
     private String messageType;
+
+    private String message;
 
     /**
      * 用户id
@@ -31,14 +36,9 @@ public class ChatHistoryQueryRequest extends PageRequest implements Serializable
     private Long userId;
 
     /**
-     * 起始时间
+     * 最后一条记录的创建时间
      */
-    private String startTime;
-
-    /**
-     * 结束时间
-     */
-    private String endTime;
+    private LocalDateTime lastCreateTime;
 
     private static final long serialVersionUID = 1L;
 

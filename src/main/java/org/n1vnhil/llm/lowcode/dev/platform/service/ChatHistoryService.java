@@ -6,8 +6,10 @@ import com.mybatisflex.core.service.IService;
 import org.n1vnhil.llm.lowcode.dev.platform.model.dto.chatHistory.ChatHistoryAddRequest;
 import org.n1vnhil.llm.lowcode.dev.platform.model.dto.chatHistory.ChatHistoryQueryRequest;
 import org.n1vnhil.llm.lowcode.dev.platform.model.entity.ChatHistory;
+import org.n1vnhil.llm.lowcode.dev.platform.model.entity.User;
 import org.n1vnhil.llm.lowcode.dev.platform.model.vo.chatHistory.ChatHistoryVO;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -51,11 +53,9 @@ public interface ChatHistoryService extends IService<ChatHistory> {
 
     /**
      * 分页查询对话历史VO
-     *
-     * @param chatHistoryQueryRequest 查询请求
      * @return 分页结果
      */
-    Page<ChatHistoryVO> pageChatHistoryVO(ChatHistoryQueryRequest chatHistoryQueryRequest);
+    Page<ChatHistory> pageChatHistory(Long appId, int pageSize, LocalDateTime lastCreateTime, User loginUser);
 
     /**
      * 根据应用id删除所有对话历史
