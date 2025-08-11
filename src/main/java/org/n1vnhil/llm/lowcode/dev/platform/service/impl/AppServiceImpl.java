@@ -7,9 +7,11 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
+import com.mybatisflex.spring.boot.MybatisFlexAutoConfiguration;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.n1vnhil.llm.lowcode.dev.platform.ai.AiCodeGeneratorFacade;
 import org.n1vnhil.llm.lowcode.dev.platform.constant.AppConstant;
 import org.n1vnhil.llm.lowcode.dev.platform.constant.UserConstant;
@@ -22,11 +24,13 @@ import org.n1vnhil.llm.lowcode.dev.platform.model.dto.app.AppUpdateRequest;
 import org.n1vnhil.llm.lowcode.dev.platform.model.entity.App;
 import org.n1vnhil.llm.lowcode.dev.platform.model.entity.User;
 import org.n1vnhil.llm.lowcode.dev.platform.mapper.AppMapper;
+import org.n1vnhil.llm.lowcode.dev.platform.model.enums.ChatHistoryMessageType;
 import org.n1vnhil.llm.lowcode.dev.platform.model.enums.CodeGenerationType;
 import org.n1vnhil.llm.lowcode.dev.platform.model.enums.UserRoleEnum;
 import org.n1vnhil.llm.lowcode.dev.platform.model.vo.app.AppVO;
 import org.n1vnhil.llm.lowcode.dev.platform.model.vo.user.UserVO;
 import org.n1vnhil.llm.lowcode.dev.platform.service.AppService;
+import org.n1vnhil.llm.lowcode.dev.platform.service.ChatHistoryService;
 import org.n1vnhil.llm.lowcode.dev.platform.service.UserService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +41,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.io.File;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,6 +54,7 @@ import java.util.stream.Collectors;
  *
  * @author zhiheng
  */
+@Slf4j
 @Service
 public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppService {
 
@@ -57,6 +63,9 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
 
     @Resource
     private UserService userService;
+
+    @Resource
+    private ChatHistoryService chatHistoryService;
 
     @Override
     public AppVO getAppVO(App app) {
@@ -120,15 +129,27 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
 
         String codeGenType = app.getCodeGenType();
         CodeGenerationType type = CodeGenerationType.getEnumByValue(codeGenType);
+        StringBuilder aiResponseBuilder = new StringBuilder();
         return aiCodeGeneratorFacade.generateAndSaveCodeStream(message, type, appId)
                 .map(chunk -> {
                     Map<String, String> wrapper = Map.of("d", chunk);
                     String jsonData = JSONUtil.toJsonStr(wrapper);
+                    aiResponseBuilder.append(chunk);
                     return ServerSentEvent.<String>builder().data(jsonData).build();
                 })
                 .concatWith(Mono.just(
                         ServerSentEvent.<String>builder().event("done").data("").build()
-                ));
+                ))
+                .doOnComplete(() -> {
+                    String response = aiResponseBuilder.toString();
+                    if (StrUtil.isNotBlank(response)) {
+                        chatHistoryService.addChatMessage(appId, response, ChatHistoryMessageType.AI.getValue(), loginUser.getId());
+                    }
+                })
+                .doOnError(error -> {
+                    String errorMessage = "AI回复失败：" + error.getMessage();
+                    chatHistoryService.addChatMessage(appId, errorMessage, ChatHistoryMessageType.AI.getValue(), loginUser.getId());
+                });
     }
 
     @Override
@@ -172,4 +193,23 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         return String.format("%s/%s/", AppConstant.CODE_DEPLOY_HOST, deployKey);
     }
 
+    @Override
+    public boolean removeById(Serializable id) {
+        if (id == null) {
+            return false;
+        }
+
+        Long appId = Long.valueOf(id.toString());
+        if (appId <= 0) {
+            return false;
+        }
+
+        try {
+            chatHistoryService.deleteByAppId(appId);
+        } catch (Exception e) {
+            log.error("删除应用关联对话记录失败：{}", e.getMessage());
+        }
+
+        return super.removeById(id);
+    }
 }
