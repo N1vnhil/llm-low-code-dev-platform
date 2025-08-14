@@ -20,6 +20,7 @@ import org.n1vnhil.llm.lowcode.dev.platform.service.AppService;
 import org.n1vnhil.llm.lowcode.dev.platform.service.ChatHistoryService;
 import org.n1vnhil.llm.lowcode.dev.platform.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -34,24 +35,8 @@ import java.util.List;
 public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatHistory>  implements ChatHistoryService{
 
     @Resource
+    @Lazy
     private AppService appService;
-    @Autowired
-    private UserService userService;
-
-    @Override
-    public Long addChatHistory(ChatHistoryAddRequest chatHistoryAddRequest) {
-        return 0L;
-    }
-
-    @Override
-    public ChatHistoryVO getChatHistoryVO(ChatHistory chatHistory) {
-        return null;
-    }
-
-    @Override
-    public List<ChatHistoryVO> getChatHistoryVOList(List<ChatHistory> chatHistoryList) {
-        return List.of();
-    }
 
     @Override
     public QueryWrapper getQueryWrapper(ChatHistoryQueryRequest chatHistoryQueryRequest) {
@@ -111,11 +96,6 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
         QueryWrapper wrapper = QueryWrapper.create()
                 .eq("appId", appId);
         return this.remove(wrapper);
-    }
-
-    @Override
-    public List<ChatHistoryVO> getLatestChatHistoryByAppId(Long appId, int limit) {
-        return List.of();
     }
 
     @Override

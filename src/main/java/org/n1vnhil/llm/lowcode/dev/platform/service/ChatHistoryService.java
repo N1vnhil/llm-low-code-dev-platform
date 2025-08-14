@@ -20,30 +20,6 @@ import java.util.List;
 public interface ChatHistoryService extends IService<ChatHistory> {
 
     /**
-     * 创建对话历史
-     *
-     * @param chatHistoryAddRequest 添加请求
-     * @return 对话历史id
-     */
-    Long addChatHistory(ChatHistoryAddRequest chatHistoryAddRequest);
-
-    /**
-     * 获取对话历史VO
-     *
-     * @param chatHistory 对话历史
-     * @return 对话历史VO
-     */
-    ChatHistoryVO getChatHistoryVO(ChatHistory chatHistory);
-
-    /**
-     * 获取对话历史VO列表
-     *
-     * @param chatHistoryList 对话历史列表
-     * @return 对话历史VO列表
-     */
-    List<ChatHistoryVO> getChatHistoryVOList(List<ChatHistory> chatHistoryList);
-
-    /**
      * 获取查询条件
      *
      * @param chatHistoryQueryRequest 查询请求
@@ -64,15 +40,6 @@ public interface ChatHistoryService extends IService<ChatHistory> {
      * @return 是否成功
      */
     boolean deleteByAppId(Long appId);
-
-    /**
-     * 查询某个应用的最新n条对话历史
-     *
-     * @param appId 应用id
-     * @param limit 查询数量
-     * @return 对话历史列表
-     */
-    List<ChatHistoryVO> getLatestChatHistoryByAppId(Long appId, int limit);
 
     boolean addChatMessage(Long appId, String message, String type, Long userId);
 

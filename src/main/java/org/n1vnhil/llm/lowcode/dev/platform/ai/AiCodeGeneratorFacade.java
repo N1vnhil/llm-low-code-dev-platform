@@ -8,6 +8,7 @@ import org.n1vnhil.llm.lowcode.dev.platform.core.parser.CodeParserExecutor;
 import org.n1vnhil.llm.lowcode.dev.platform.core.saver.CodeFileSaverExecutor;
 import org.n1vnhil.llm.lowcode.dev.platform.exception.BizException;
 import org.n1vnhil.llm.lowcode.dev.platform.exception.ResponseCodeEnum;
+import org.n1vnhil.llm.lowcode.dev.platform.exception.ThrowUtils;
 import org.n1vnhil.llm.lowcode.dev.platform.model.enums.CodeGenerationType;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
@@ -19,7 +20,7 @@ import java.io.File;
 public class AiCodeGeneratorFacade {
 
     @Resource
-    private AiCodeGeneratorService aiCodeGeneratorService;
+    private AiCodeGeneratorServiceFactory aiCodeGeneratorServiceFactory;
 
     /**
      * 代码生成同一入口
@@ -31,6 +32,10 @@ public class AiCodeGeneratorFacade {
         if (type == null) {
             throw new BizException(ResponseCodeEnum.SYSTEM_ERROR, "生成类型为空");
         }
+
+        ThrowUtils.throwIf(appId == null, ResponseCodeEnum.PARAMS_ERROR, "应用ID不能为空");
+        AiCodeGeneratorService aiCodeGeneratorService = aiCodeGeneratorServiceFactory.getAiCodeGenerationService(appId);
+
         return switch (type) {
             case HTML -> {
                 HtmlCodeResult result = aiCodeGeneratorService.generateHtmlCode(userMessage);
@@ -53,6 +58,9 @@ public class AiCodeGeneratorFacade {
         if (type == null) {
             throw new BizException(ResponseCodeEnum.SYSTEM_ERROR, "生成类型为空");
         }
+
+        ThrowUtils.throwIf(appId == null, ResponseCodeEnum.PARAMS_ERROR, "应用ID不能为空");
+        AiCodeGeneratorService aiCodeGeneratorService = aiCodeGeneratorServiceFactory.getAiCodeGenerationService(appId);
 
         Flux<String> result = switch (type) {
             case HTML -> aiCodeGeneratorService.generateHtmlCodeStream(userMessage);
