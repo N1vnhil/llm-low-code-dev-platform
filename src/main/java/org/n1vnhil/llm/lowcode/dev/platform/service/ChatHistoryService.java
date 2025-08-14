@@ -3,6 +3,7 @@ package org.n1vnhil.llm.lowcode.dev.platform.service;
 import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.core.service.IService;
+import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import org.n1vnhil.llm.lowcode.dev.platform.model.dto.chatHistory.ChatHistoryAddRequest;
 import org.n1vnhil.llm.lowcode.dev.platform.model.dto.chatHistory.ChatHistoryQueryRequest;
 import org.n1vnhil.llm.lowcode.dev.platform.model.entity.ChatHistory;
@@ -42,5 +43,7 @@ public interface ChatHistoryService extends IService<ChatHistory> {
     boolean deleteByAppId(Long appId);
 
     boolean addChatMessage(Long appId, String message, String type, Long userId);
+
+    int loadChatHistoryToMemory(Long appId, MessageWindowChatMemory chatMemory, int maxCount);
 
 }

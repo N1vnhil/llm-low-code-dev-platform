@@ -1,10 +1,15 @@
 package org.n1vnhil.llm.lowcode.dev.platform.service.impl;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
+import dev.langchain4j.data.message.AiMessage;
+import dev.langchain4j.data.message.UserMessage;
+import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.n1vnhil.llm.lowcode.dev.platform.constant.UserConstant;
 import org.n1vnhil.llm.lowcode.dev.platform.exception.ResponseCodeEnum;
 import org.n1vnhil.llm.lowcode.dev.platform.exception.ThrowUtils;
@@ -31,6 +36,7 @@ import java.util.List;
  *
  * @author zhiheng
  */
+@Slf4j
 @Service
 public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatHistory>  implements ChatHistoryService{
 
@@ -113,6 +119,37 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
                 .messageType(type)
                 .build();
         return this.save(chatHistory);
+    }
+
+    @Override
+    public int loadChatHistoryToMemory(Long appId, MessageWindowChatMemory chatMemory, int maxCount) {
+        try {
+            QueryWrapper queryWrapper = QueryWrapper.create()
+                    .eq(ChatHistory::getAppId, appId)
+                    .orderBy(ChatHistory::getCreateTime, false)
+                    .limit(1, maxCount);
+            List<ChatHistory> historyList = this.list(queryWrapper);
+            if (CollUtil.isEmpty(historyList)) {
+                return 0;
+            }
+            historyList = historyList.reversed();
+            int loaded = 0;
+            chatMemory.clear();
+            for (ChatHistory chatHistory: historyList) {
+                if (ChatHistoryMessageType.USER.getValue().equals(chatHistory.getMessageType())) {
+                    chatMemory.add(UserMessage.from(chatHistory.getMessage()));
+                    loaded++;
+                } else if (ChatHistoryMessageType.AI.getValue().equals(chatHistory.getMessageType())) {
+                    chatMemory.add(AiMessage.from(chatHistory.getMessage()));
+                    loaded++;
+                }
+            }
+            log.info("成功为 appId：{} 加载了 {} 条消息", appId, loaded);
+            return loaded;
+        } catch (Exception e) {
+            log.info("消息加载失败，appId：{}，error：{}", appId, e.getMessage(), e);
+            return 0;
+        }
     }
 
 }
