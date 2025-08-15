@@ -9,6 +9,8 @@ import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.service.AiServices;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.n1vnhil.llm.lowcode.dev.platform.service.ChatHistoryService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -26,6 +28,9 @@ public class AiCodeGeneratorServiceFactory {
 
     @Resource
     private RedisChatMemoryStore redisChatMemoryStore;
+
+    @Resource
+    private ChatHistoryService chatHistoryService;
 
     @Bean
     public AiCodeGeneratorService aiCodeGeneratorService() {
@@ -47,15 +52,16 @@ public class AiCodeGeneratorServiceFactory {
 
     public AiCodeGeneratorService createAiCodeGeneratorService(long appId) {
         log.info("创建新的AI服务实例，appId：{}", appId);
+        MessageWindowChatMemory chatMemory = MessageWindowChatMemory.builder()
+                .id(appId)
+                .chatMemoryStore(redisChatMemoryStore)
+                .maxMessages(20)
+                .build();
+        chatHistoryService.loadChatHistoryToMemory(appId, chatMemory, 20);
         return AiServices.builder(AiCodeGeneratorService.class)
                 .chatModel(chatModel)
                 .streamingChatModel(streamingChatModel)
-                .chatMemory(MessageWindowChatMemory
-                        .builder()
-                        .id(appId)
-                        .chatMemoryStore(redisChatMemoryStore)
-                        .maxMessages(20)
-                        .build())
+                .chatMemory(chatMemory)
                 .build();
     }
 }
