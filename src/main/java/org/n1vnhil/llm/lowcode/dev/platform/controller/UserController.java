@@ -68,7 +68,7 @@ public class UserController {
      * @param request 用户请求
      * @return 当前用户信息
      */
-    @GetMapping("/login")
+    @GetMapping("/get/login")
     public Response<LoginUserVO> getUserInfo(HttpServletRequest request) {
         User user = userService.getLoginUser(request);
         return ResponseUtils.success(userService.getLoginUserVO(user));
@@ -106,7 +106,7 @@ public class UserController {
      * @return {@code true} 删除成功，{@code false} 删除失败
      */
     @AuthCheck(role = UserConstant.ADMIN_ROLE)
-    @DeleteMapping("/remove/{id}")
+    @PostMapping("/remove")
     public Response<Boolean> remove(@RequestBody DeleteRequest deleteRequest) {
         if (deleteRequest == null || deleteRequest.getId() < 0) {
             throw new BizException(ResponseCodeEnum.PARAMS_ERROR);
@@ -122,8 +122,8 @@ public class UserController {
      * @return 更新结果
      */
     @AuthCheck(role = UserConstant.ADMIN_ROLE)
-    @PutMapping("/update")
-    public Response<Boolean> update(@RequestBody UserUpdateRequest userUpdateRequest) {
+    @PostMapping("/update")
+    public Response<Boolean> updateUserInfo(@RequestBody UserUpdateRequest userUpdateRequest) {
         User user = new User();
         BeanUtils.copyProperties(userUpdateRequest, user);
         boolean result =  userService.updateById(user);
