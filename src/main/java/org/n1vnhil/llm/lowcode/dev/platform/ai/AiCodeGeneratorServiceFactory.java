@@ -10,16 +10,13 @@ import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.service.AiServices;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.internal.http2.ErrorCode;
 import org.n1vnhil.llm.lowcode.dev.platform.ai.tools.FileWriteTool;
 import org.n1vnhil.llm.lowcode.dev.platform.exception.BizException;
 import org.n1vnhil.llm.lowcode.dev.platform.exception.ResponseCodeEnum;
 import org.n1vnhil.llm.lowcode.dev.platform.model.enums.CodeGenerationType;
 import org.n1vnhil.llm.lowcode.dev.platform.service.ChatHistoryService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.session.web.http.DefaultCookieSerializer;
 
 import java.time.Duration;
 
@@ -39,7 +36,7 @@ public class AiCodeGeneratorServiceFactory {
     @Resource
     private ChatHistoryService chatHistoryService;
 
-    @Resource(name = "reasoningChatModel")
+    @Resource(name = "openAiStreamingChatModel")
     private StreamingChatModel reasoningChatModel;
 
     @Bean

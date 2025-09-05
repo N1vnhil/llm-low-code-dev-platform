@@ -117,7 +117,7 @@ public class UserController {
 
     /**
      * 更新用户信息
-     *
+     *  
      * @param userUpdateRequest 更新用户请求
      * @return 更新结果
      */

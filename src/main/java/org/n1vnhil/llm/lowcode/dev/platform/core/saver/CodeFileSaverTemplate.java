@@ -3,6 +3,7 @@ package org.n1vnhil.llm.lowcode.dev.platform.core.saver;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.n1vnhil.llm.lowcode.dev.platform.constant.AppConstant;
 import org.n1vnhil.llm.lowcode.dev.platform.exception.BizException;
 import org.n1vnhil.llm.lowcode.dev.platform.exception.ResponseCodeEnum;
@@ -11,6 +12,7 @@ import org.n1vnhil.llm.lowcode.dev.platform.model.enums.CodeGenerationType;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 
+@Slf4j
 public abstract class CodeFileSaverTemplate<T> {
 
     private static final String FILE_SAVE_ROOT_DIR = System.getProperty("user.dir") + AppConstant.CODE_OUTPUT_ROOT_DIR;

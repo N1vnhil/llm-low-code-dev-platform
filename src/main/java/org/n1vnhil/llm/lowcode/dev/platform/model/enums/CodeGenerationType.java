@@ -7,8 +7,10 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum CodeGenerationType {
-    HTML("原生HTML模式", "html"),
-    MULTI_FILE("原生多文件模式", "multi_file");
+    HTML("HTML模式", "html"),
+    MULTI_FILE("原生多文件模式", "multi_file"),
+    VUE("Vue工程模式", "vue")
+    ;
 
     private String text;
 
